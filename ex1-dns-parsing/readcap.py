@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 import sys
-import optparse
+import argparse
 import socket
 import select
 import errno
@@ -12,9 +12,7 @@ from struct import *
 
 def hexprint(str):
     print(":".join("{:02x}".format(ord(c)) for c in str))
-
-
-    
+  
 
 def read_name(dns_pkt, pos):    
     name=''
@@ -70,10 +68,10 @@ def read_questions(dns_pkt, pos, qnum):
 def read_rrs(dns_pkt, pos, rnum):
     rrs=[]
     addr_types=[1]
-    data=''
     
     
     for i in range (0,rnum):
+        data=''
         name,pos=read_name(dns_pkt, pos)
         (tp,cl,ttl,dlen)=unpack('>HHLH', dns_pkt[pos:pos+10])
         pos += 10
@@ -117,7 +115,7 @@ def pretty_print(dns_dict):
         print
     print "Answers:"
     pretty_records(dns_dict['Answers'])
-          
+         
     print "===== end display DNS packet 0x%x =====" % dns_dict['tid']
     print
     print
@@ -136,13 +134,19 @@ def read_dns_packet(dns_pkt):
 
     pretty_print(dns_dict)
 
-            
-def main():
-    parser = optparse.OptionParser()
-    parser.add_option('--pcap', dest='pcap', help='name of pcap file')
 
-    opt, args = parser.parse_args()
-    pkts = rdpcap(opt.pcap)
+def parse_args():
+    argument_parser = argparse.ArgumentParser()
+    argument_parser.add_argument("pcap", help="pcap to parse")
+    argument_parser.add_argument("--domain", help="specify single domain") 
+    argument_parser.add_argument("--action", default='display', choices=['display', 'filter'], help="define the action - either display DNS entries, or filter by specific domain. Defaults to display") 
+
+    return argument_parser.parse_args()
+
+def main():
+    args = parse_args()
+
+    pkts = rdpcap(args.pcap)           
     for pkt in pkts:
         if 'DNS' in pkt:
             raw=str(pkt['DNS'])
