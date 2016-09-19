@@ -90,11 +90,11 @@ def read_rrs(dns_pkt, pos, rnum):
 
 def pretty_records(li):
     for i in li:
-        print "\tName: ", i[0]
-        print "\tType: ", i[1]
-        print "\tClass: ", i[2]
-        print "\tTime to live: ", i[3]
-        print "\tAddress: ", i[4]
+        print "    Name: ", i[0]
+        print "    Type: ", i[1]
+        print "    Class: ", i[2]
+        print "    Time to live: ", i[3]
+        print "    Address: ", i[4]
         print
 
 def pretty_print(dns_dict):
@@ -108,12 +108,14 @@ def pretty_print(dns_dict):
     print "Additional RRs: ", "%d" % dns_dict['add_num']   
     print
     print "Queries:"
+    print
     for i in dns_dict['Queries']:
-        print "\tName: ", i[0]
-        print "\tType: ", i[1]
-        print "\tClass: ", i[2]
+        print "    Name: ", i[0]
+        print "    Type: ", i[1]
+        print "    Class: ", i[2]
         print
     print "Answers:"
+    print
     pretty_records(dns_dict['Answers'])
          
     print "===== end display DNS packet 0x%x =====" % dns_dict['tid']

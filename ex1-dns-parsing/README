@@ -34,12 +34,14 @@ Authority RRs:  number or authority RRs (decimal)
 Additional RRs:  number or additional RRs (decimal)
 
 Queries:
+    <empty space>
     Name:  domain name (string)
 	Type:  type (decimal)
     Class:  class (decimal)
 	<empty line>
 	* repeated for each query entry
 Answers:
+    <empty space>  
     Name:  domain name (string)
 	Type:  type (decimal)
     Class:  class (decimal)
@@ -50,6 +52,8 @@ Answers:
 
 ===== end display DNS packet 0xXXXX =====
 
+Use 4 spaces for indentation (not tab)
+At the end of each packet add other two empty lines (print twice)
 
 Example:
 
@@ -62,11 +66,13 @@ Authority RRs:  0
 Additional RRs:  0
 
 Queries:
+
         Name:  static.chartbeat.com
 	Type:  1
         Class:  1
 
 Answers:
+
         Name:  static.chartbeat.com
         Type:  5
 	Class:  1
@@ -94,9 +100,6 @@ Answers:
 ===== end display DNS packet 0x9a13 =====
 
 
-
-At the end of each packet add other two empty lines (print twice)
-
 * Note that authority and additional RR sections are not displayed	  
 	  
 
@@ -123,4 +126,7 @@ Section 4.1
 Section 4.1.4 (message compression) may be a little confusing - read it thoroughly
 
 Use wireshark - look at packets, see that you understand the spec.
+
+You will receive an example PCAP and the display results. Your program when run on the pcap should emit results identical to the results you were given. 
+I.e. using the Linux command 'diff <file1> <file2>' should not produce any output.
 
