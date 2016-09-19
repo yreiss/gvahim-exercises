@@ -24,12 +24,33 @@ def print_hexview(_str):
 
 def prety_print_fingerprint(fp):
     fp_dict = decode_fingerprint(fp)
+    print "record version: ", "0x%x" % fp_dict['record_version']
+    print "client hello version: ", "0x%x" % fp_dict['ch_version']
+    print "cipher suite: ", str(fp_dict['cipher_suites'] )
+    print "compression methods: ", str(fp_dict['compression_methods'])
 
 
 def decode_fingerprint(fp):
     fp_dict = {}
-    fp_dict['record_version'] = unpack('>H', fp[0:2])
-    print fp_dict['record_version']
+    fp_dict['cipher_suites']=[]
+    fp_dict['compression_methods']=[]
+
+    fp_dict['record_version'], fp_dict['ch_version'], fp_dict['cipher_suites_len'] = unpack('>HHH', fp[0:6])
+
+    for i in range(6,fp_dict['cipher_suites_len']+6,2):
+        fp_dict['cipher_suites'].append(unpack('>H', fp[i:i+2])[0])
+
+    pos=fp_dict['cipher_suites_len']+6
+    fp_dict['compression_method_len'] = unpack('B', fp[pos:pos+1])[0]
+    pos+=1
+    for pos in range(pos,pos+fp_dict['compression_method_len']):
+        fp_dict['compression_methods'].append(unpack('B', fp[pos:pos+1])[0])
+    pos += 1
+
+    
+    
+    return fp_dict
+
 
 def md5_fingerprint(fp):
     m = hashlib.md5()
@@ -79,7 +100,7 @@ def main():
             fp = create_fingerprint(pkt.records[0])
             #        print_hexview(fp)
             print md5_fingerprint(fp)
-
+            prety_print_fingerprint(fp)
 
 
 if __name__ == "__main__":
