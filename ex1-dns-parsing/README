@@ -1,0 +1,126 @@
+Exercise: networking #1
+
+Write a python program that accepts a arguments as shown in the following example:
+
+# ./readcap.py -h
+
+usage: readcap.py [-h] [--domain DOMAIN] [--action {display,filter}] pcap
+
+positional arguments:
+  pcap                  pcap to parse
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --domain DOMAIN       specify single domain
+  --action {display,filter}
+                        define the action - either display DNS entries, or filter by specific domain. Defaults to display
+
+
+
+The program receives a pcap file (google it) captured by wireshark or tcpdump (or any other tool that knows to produce pcaps).
+
+In case the action is 'display', each DNS packet is displayed in the format below. If DOMAIN has been set, this is done only for query or answer for the specific domain.
+In case the action is 'filter', the domain must also be set (otherwise an error message should be produced, and the exit value should be positive). The program should then identify the actual address returned for that domain (directly or via CNAME/s) and generate another pcap file which only contains the dns query and response and all the IPv4 traffic.
+
+The display format for a single packet is as follows:
+
+
+===== begin display DNS packet 0xXXX =====
+
+Flags:  0xXXXX
+Questions:  number or queries (decimal)
+Answer RRs:  number or answers (decimal)
+Authority RRs:  number or authority RRs (decimal)
+Additional RRs:  number or additional RRs (decimal)
+
+Queries:
+    Name:  domain name (string)
+	Type:  type (decimal)
+    Class:  class (decimal)
+	<empty line>
+	* repeated for each query entry
+Answers:
+    Name:  domain name (string)
+	Type:  type (decimal)
+    Class:  class (decimal)
+    Time to live:  ttl (decimal)
+    <Address|Name>:  depending on the type, IPv4 address (in case of type 'A') or domain name (in case of type 'CNAME')
+	<empty line>
+	* repeated for each answer entry
+
+===== end display DNS packet 0xXXXX =====
+
+
+Example:
+
+===== begin display DNS packet 0x9a13 =====
+
+Flags:  0x8180
+Questions:  1
+Answer RRs:  4
+Authority RRs:  0
+Additional RRs:  0
+
+Queries:
+        Name:  static.chartbeat.com
+	Type:  1
+        Class:  1
+
+Answers:
+        Name:  static.chartbeat.com
+        Type:  5
+	Class:  1
+        Time to live:  219
+        Address:  global.ssl.fastly.net
+
+	Name:  global.ssl.fastly.net
+	Type:  5
+        Class:  1
+        Time to live:  19
+	Address:  global-ssl.fastly.net
+
+        Name:  global-ssl.fastly.net
+	Type:  5
+        Class:  1
+        Time to live:  30
+        Address:  fallback.global-ssl.fastly.net
+
+        Name:  fallback.global-ssl.fastly.net
+	Type:  1
+        Class:  1
+        Time to live:  19
+        Address:  23.235.43.249
+
+===== end display DNS packet 0x9a13 =====
+
+
+
+At the end of each packet add other two empty lines (print twice)
+
+* Note that authority and additional RR sections are not displayed	  
+	  
+
+A DNS packet contains class and type in the query and answer sections. If the following cases the packet should not be considered (neither for display nor for filtering):
+- class is different than 'IN' (1)
+- Type is not in ['A' (1), 'CNAME' (5)]
+
+
+Guidence:
+--------
+You must use the argparse module and produce the same output of -h as shown above. This should be done automatically if you use argparse correctly.
+TIP: understand positional vs. optional arguments. Also use the 'choices' option in the add_argument method. For the help text use the 'help' option of that method. 
+
+You may use SCAPY for receving and iterating the packets in the original pcap and for creating the new pcap file.
+You may use SCAPY also for filtering the relevant packets.
+You may not use SCAPY for parsing the DNS layer. It is OK to get the DNS as raw data, but parsing the DNS layer itself has to be done using the 'struct' module.
+
+You should read RFC1035. Specifically read the following parts:
+
+section 3
+Read section 3.1 and see that you understand how a domain name is represented (it can be very useful to look at wireshark)
+Section 4.1
+
+Section 4.1.4 (message compression) may be a little confusing - read it thoroughly
+
+Use wireshark - look at packets, see that you understand the spec.
+
