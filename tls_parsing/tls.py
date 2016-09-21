@@ -7,7 +7,6 @@ from scapy_ssl_tls.ssl_tls import *
 from struct import *
 
 
-
 class filter_spec():
     def __init__(self):
         self.excluded_extensions = []
@@ -51,7 +50,6 @@ def decode_fingerprint(fp):
     
     return fp_dict
 
-
 def md5_fingerprint(fp):
     m = hashlib.md5()
     m.update(fp)
@@ -88,20 +86,23 @@ def create_fingerprint(record, filter_spec=None):
 
 def parse_args():
     argument_parser = argparse.ArgumentParser()
-    argument_parser.add_argument("pcap", help="pcap to parse")
+    argument_parser.add_argument("pcaps", metavar='P', nargs='+', help="pcap(s) to parse")
+    argument_parser.add_argument("-d,", "--display-client-hello", dest='disp', action='store_true', help="display content of client hello") 
+    argument_parser.set_defaults(disp=False)
 
     return argument_parser.parse_args()
 
 def main():
     args = parse_args()
-    pkts = rdpcap(args.pcap)
-    for pkt in pkts:
-        if 'TLSClientHello' in pkt and 'TLSClientHello' in pkt.records[0]:
-            fp = create_fingerprint(pkt.records[0])
-            #        print_hexview(fp)
-            print md5_fingerprint(fp)
-            prety_print_fingerprint(fp)
-
+    for pcap in args.pcaps:
+        pkts = rdpcap(pcap)
+        for pkt in pkts:
+            if 'TLSClientHello' in pkt and 'TLSClientHello' in pkt.records[0]:
+                fp = create_fingerprint(pkt.records[0])
+                #        print_hexview(fp)
+                print pkt[IP].src, ", ", pkt[IP].dst, ", ", md5_fingerprint(fp)
+                if args.disp:
+                    prety_print_fingerprint(fp)
 
 if __name__ == "__main__":
     main()
