@@ -100,7 +100,7 @@ def main():
             if 'TLSClientHello' in pkt and 'TLSClientHello' in pkt.records[0]:
                 fp = create_fingerprint(pkt.records[0])
                 #        print_hexview(fp)
-                print pkt[IP].src, ", ", pkt[IP].dst, ", ", md5_fingerprint(fp)
+                print pkt.time, ", ", pkt[IP].src, ", ", pkt[IP].dst, ", ", md5_fingerprint(fp)
                 if args.disp:
                     prety_print_fingerprint(fp)
 
