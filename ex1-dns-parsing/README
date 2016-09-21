@@ -1,10 +1,10 @@
-Exercise: networking #1
+DNS Exercise
 
-Write a python program that accepts a arguments as shown in the following example:
+Write a python program that accepts arguments as shown in the following example:
 
-# ./readcap.py -h
+# ./parse_dns.py -h
 
-usage: readcap.py [-h] [--domain DOMAIN] [--action {display,filter}] pcap
+usage: parse_dns.py [-h] [--domain DOMAIN] [--action {display,filter}] pcap
 
 positional arguments:
   pcap                  pcap to parse
@@ -14,8 +14,6 @@ optional arguments:
   --domain DOMAIN       specify single domain
   --action {display,filter}
                         define the action - either display DNS entries, or filter by specific domain. Defaults to display
-
-
 
 The program receives a pcap file (google it) captured by wireshark or tcpdump (or any other tool that knows to produce pcaps).
 
@@ -128,5 +126,11 @@ Section 4.1.4 (message compression) may be a little confusing - read it thorough
 Use wireshark - look at packets, see that you understand the spec.
 
 You will receive an example PCAP and the display results. Your program when run on the pcap should emit results identical to the results you were given. 
-I.e. using the Linux command 'diff <file1> <file2>' should not produce any output.
+I.e. using the Linux command 'diff <file1> <file2>' should not produce any output, if file1 contains output produced by my implementation and file2 contains output produced by yours.
+
+Note: in order to send the output of your program to a file you can use redirection. This is done by adding '> <filename>' after the command. E.g.:
+# ./parse_dns.py ./dns.pcap > dns.result
+
+Redirection works both in Linux and Windows. Try it!
+
 
