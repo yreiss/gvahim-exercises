@@ -7,8 +7,6 @@ from scapy_ssl_tls.ssl_tls import *
 from struct import *
 from sets import Set
 
-
-
 class filter_spec():
     def __init__(self):
         self.excluded_extensions = []
@@ -70,8 +68,6 @@ class client_hello():
 
         self._md5hasher.update(self._fp)
         self._md5 = self._md5hasher.hexdigest()    
-
-
 
     def get_finger_print(self):
         return self._fp
@@ -168,30 +164,53 @@ def parse_args():
 
     return argument_parser.parse_args()
 
-def hash_by_ip(di, ip, md5):
-    if ip not in di:
-        di[ip] =  {md5:1}
+def hash_by_ip(di, src_ip, md5):
+    if src_ip not in di:
+        di[src_ip] =  {md5:1}
     else:
-        if md5 not in di[ip]:
-            di[ip][md5] = 1
+        if md5 not in di[src_ip]:
+            di[src_ip][md5] = 1
         else:
-            di[ip][md5] += 1
+            di[src_ip][md5] += 1
 
-def hash_by_hash(di, ip, md5):
+def hash_by_hash(di, src_ip, md5):
     if md5 not in di:        
         di[md5] = Set()
-    di[md5].add(ip)
+    di[md5].add(src_ip)
 
+
+def get_hosts_from_desc(desc):
+    hosts=[]
+    for e in desc['extensions']:
+        if e.type == 0:
+            for n in e.server_names:
+                hosts += [n.data]
+            break
+    return hosts
 
 def add_hash_description(di, md5, desc):
     if md5 not in di:
         di[md5] = desc
+    if not 'hosts' in di[md5]:
+        di[md5]['hosts'] = Set()
+
+    hosts = get_hosts_from_desc(desc)
+
+    for host in hosts:
+        if (len(di[md5]['hosts']) < 100):
+            di[md5]['hosts'].add(host)
+        else:
+            di[md5]['hosts'].add('and more...')
+            break
+
+    
+
 
 def main():
     args = parse_args()
 
     hash_description={}
-    hashes_by_ip={}  # dict with ip as key, containing for each IP a dict by hashes + their counter.
+    hashes_by_ip={}  # dict with source ip as key, containing for each IP a dict by hashes + their counter.
     hashes_by_hash={}  # dict by hash, containing for each hash a set of IPs on which it was seen
 
     for pcap in args.pcaps:
@@ -225,10 +244,14 @@ def main():
         print k, hashes_by_hash[k]
 
 
+    print "all hash descriptions: "
+    print
+    for k in hash_description:
+        print k, hash_description[k]['hosts']
 
 
-if __name__ == "__main__":
-    main()
+If __Name__ == "__Main__":
+    Main()
 
 
 
