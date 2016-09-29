@@ -9,6 +9,7 @@ import pytun
 from scapy.all import *
 import time
 from struct import *
+from scapy.utils import PcapWriter
 
 def hexprint(str):
     print(":".join("{:02x}".format(ord(c)) for c in str))
@@ -122,19 +123,15 @@ def pretty_print(dns_dict):
     print
     print
 
-def read_dns_packet(dns_pkt):
+def read_dns_packet(dns_pkt, domain=None):
     dns_dict = {}
     d=dns_dict
     
-    # hexprint(str(dns_pkt))
-
     (d['tid'],d['flags'],d['q_num'],d['ans_num'], d['auth_num'],d['add_num'])=unpack('>HHHHHH', dns_pkt[:12])
     d['Queries'], pos = read_questions(dns_pkt, 12, d['q_num'])
     d['Answers'] = read_rrs(dns_pkt, pos, d['ans_num'])
-    #d['Auth'] = read_rrs(dns_pkt, pos, d['auth_num'])
-    #d['Add'] = read_rrs(dns_pkt, pos, d['add_num'])
 
-    pretty_print(dns_dict)
+    return d if not domain or domain == dns_dict['Queries'][0][0] else None
 
 
 def parse_args():
@@ -148,11 +145,38 @@ def parse_args():
 def main():
     args = parse_args()
 
+    all_packet_dic = []
+
     pkts = rdpcap(args.pcap)           
     for pkt in pkts:
         if 'DNS' in pkt:
             raw=str(pkt['DNS'])
-            read_dns_packet(raw)
+            d=read_dns_packet(raw, args.domain)
+            if d:
+                all_packet_dic.append(d)
+
+    if args.action == 'display':
+        for p in all_packet_dic:
+            pretty_print(p)
+    else:
+        n=args.pcap
+        ind=n.rfind('.')
+        new_pcap = n[:ind] + '.' + args.domain + '.' + n[ind+1:]
+        pktdump = PcapWriter(new_pcap, append=True, sync=True)
+        addresses=[]
+        for p in all_packet_dic:
+            if p['Answers']:
+                for a in p['Answers']:
+                    if a[1] == 1:
+                        addresses.append(a[4])
+        for pkt in pkts:
+            try:           
+                if pkt[IP].src in addresses or pkt[IP].dst in addresses:
+                    pktdump.write(pkt)
+            except:
+                IndexError
+
+                
 
 
 if __name__ == '__main__':
