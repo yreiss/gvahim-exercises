@@ -2,15 +2,11 @@
 
 import sys
 import argparse
-import socket
-import select
-import errno
-import pytun
 from scapy.all import *
-import time
 from struct import *
 from scapy.utils import PcapWriter
 
+# not used but left here for debug aid
 def hexprint(str):
     print(":".join("{:02x}".format(ord(c)) for c in str))
   
