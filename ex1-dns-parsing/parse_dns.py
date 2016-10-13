@@ -40,14 +40,14 @@ def read_name(dns_pkt, pos):
 
     if not pointed:
         end_pos=pos
-
+    
     return name,end_pos
 
 
 
 
 # receive a pointer to the question section (RFC1035 section 4.1.2) and the number of questions
-# returns an array of tuples of (name, qtype, qclass)
+# returns an array of tuples of (name, qtype, qclass) and the new position
 def read_questions(dns_pkt, pos, qnum):
     questions=[]
     for i in range (0,qnum):
@@ -64,24 +64,26 @@ def read_questions(dns_pkt, pos, qnum):
     
 def read_rrs(dns_pkt, pos, rnum):
     rrs=[]
-    addr_types=[1]
-    
+   
     
     for i in range (0,rnum):
         data=''
         name,pos=read_name(dns_pkt, pos)
         (tp,cl,ttl,dlen)=unpack('>HHLH', dns_pkt[pos:pos+10])
         pos += 10
-        if tp in addr_types:
+        if tp == 1:
             for i in range(0,4):
                 b=unpack('B', dns_pkt[pos+i:pos+i+1])[0]
                 data += str(b) #str(unpack('B', dns_pkt[pos+i:pos+i+1])[0] + ord('0'))
                 data += '.' if i < 3 else ''
             pos += 4
-        else:
+        elif tp == 5:
             data, pos =read_name(dns_pkt, pos)
+        else:
+            pos += dlen
 
-        rrs.append((name, tp, cl, ttl, data))
+        if tp == 1 or tp == 5:
+            rrs.append((name, tp, cl, ttl, data))
 
     return rrs
 
@@ -119,13 +121,14 @@ def pretty_print(dns_dict):
     print
     print
 
-def read_dns_packet(dns_pkt, domain=None):
+def read_dns_packet(raw_pkt, pkt, domain=None):
     dns_dict = {}
     d=dns_dict
     
-    (d['tid'],d['flags'],d['q_num'],d['ans_num'], d['auth_num'],d['add_num'])=unpack('>HHHHHH', dns_pkt[:12])
-    d['Queries'], pos = read_questions(dns_pkt, 12, d['q_num'])
-    d['Answers'] = read_rrs(dns_pkt, pos, d['ans_num'])
+    (d['tid'],d['flags'],d['q_num'],d['ans_num'], d['auth_num'],d['add_num'])=unpack('>HHHHHH', raw_pkt[:12])
+    d['Queries'], pos = read_questions(raw_pkt, 12, d['q_num'])
+    d['Answers'] = read_rrs(raw_pkt, pos, d['ans_num'])
+    d['packet'] = pkt
 
     return d if not domain or domain == dns_dict['Queries'][0][0] else None
 
@@ -147,7 +150,7 @@ def main():
     for pkt in pkts:
         if 'DNS' in pkt:
             raw=str(pkt['DNS'])
-            d=read_dns_packet(raw, args.domain)
+            d=read_dns_packet(raw, pkt, args.domain)
             if d:
                 all_packet_dic.append(d)
 
@@ -161,13 +164,14 @@ def main():
         pktdump = PcapWriter(new_pcap, append=True, sync=True)
         addresses=[]
         for p in all_packet_dic:
+            pktdump.write(p['packet'])
             if p['Answers']:
                 for a in p['Answers']:
                     if a[1] == 1:
                         addresses.append(a[4])
         for pkt in pkts:
             try:           
-                if pkt[IP].src in addresses or pkt[IP].dst in addresses:
+                if 'IP' in pkt and pkt[IP].src in addresses or pkt[IP].dst in addresses:
                     pktdump.write(pkt)
             except:
                 IndexError
